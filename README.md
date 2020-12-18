@@ -62,7 +62,7 @@ Next I wanted to add another model - Random Forest - then gridsearch my paramete
 
 For my final Random Forest and KNN models, I used the parameters I obtained through my gridsearch. I anticipated that there would not be a clear favorite among the two models, and that instead KNN would perform better on some stocks while Random Forest would perform better on others. I evaluated both models on the first ten stocks, creating a list of tuples of F1-Scores. The first item in each tuple corresponds to the Random Forest F1 and the second to the KNN F1.
 
-![First Ten F1-Scores](./images/first_ten_f1)
+![First Ten F1-Scores](./images/first_ten_f1.png)
 
 Contrary to my initial assumption, the KNN F1-Score (.48) outperformed the RF F1-Score (.43) by .05 on average, as shown in the graph above.
 
