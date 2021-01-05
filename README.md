@@ -47,7 +47,7 @@ December 2020.
 
 Next I wanted to test my hypothesis of capital markets stocks closely following the market. Below shows the mean daily closing prices of all 160 stocks, the eight capital markets stocks, and the 152 stocks that don't belong to the capital markets industry. Because the 160 is largely composed of the 152 other stocks, it's not surprising that the green line representing the other stocks so closely follows the overall trend that it obscures the blue line.
 
-![Capital Markets Closing Prices](./images/capital_markets_closing_prices)
+![Capital Markets Closing Prices](./images/capital_markets_closing_prices.png)
 
 ## Feature Engineering
 
