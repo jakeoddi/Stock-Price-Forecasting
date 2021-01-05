@@ -2,21 +2,37 @@
 
 **Author**: Jake Oddi
 
-## Overview
+## Repository Structure
 
-This project applies classification methods to the daily price data of stocks with market capitalizations between $75M and $1B from the past three years to predict intraday price movements. Instances where the closing price exceeds the opening price are considered positive cases, and instances where the opposite is true are considered negative.
+```
+├── README.md                                            <- The top-level README for reviewers of this project
+├── small_cap_stock_price_prediction_notebook.ipynb      <- Narrative documentation of analysis in Jupyter notebook
+├── Small_cap_stock_movement_classification.pdf          <- PDF version of project presentation
+├── price_classification_code                            <- Module containing cleaning, engineering, and modeling functions
+    └── functions.py                                     <- .py file containing all functions
+├── data                                                 <- source data used for analysis
+└── images                                               <- saved graphs
+``` 
 
 ## Business Problem
 
-Quantitative analysis of stocks has become increasingly popular over the past decades, to the point where it is ubiqiutous among insitutional investors. Among individual investors, however, it is less widespread. This is due to a general lack of the technical skills required to perform such analysis. I ran into this issue myself when constructing my portfolio. I predict an easy-to-use, open-source model would serve to benefit this population.
+Quantitative analysis of stocks has become increasingly popular over the past decades, to the point where it is ubiqiutous among insitutional investors. Among individual investors, however, it is less widespread. This is due to a general lack of the technical skills required to perform such analysis. I ran into this issue myself when constructing my portfolio. I predict an easy-to-use, open-source model would serve to benefit this population. 
 
-My analysis focuses on small-cap companies because they typically see lower trading volumes, and therefore have more inefficiencies that can be exploited. Conversely, this makes trades harder to execute at desirable prices.
+This project applies classification methods to the daily price data of stocks with market capitalizations between \\$75M and \\$1B from the past three years to predict intraday price movements. Instances where the closing price exceeds the opening price are considered positive cases, and instances where the opposite is true are considered negative. The timescale for this data (daily) meant predicting the position of closing price relative to opening price was a desirable classification problem, as it is harder to do with time series modeling. Conversely, time series modeling to predict exact price is much better suited to interday prices, which is what I use it for. 
 
-Predictions of price-movement-direction are nowhere near perfect, and should only be used in conjunction with additional information.
+My analysis focuses on small-cap companies because they typically see lower trading volumes, and therefore have more inefficiencies that can be exploited and less noisey trading prices. Conversely, this makes trades harder to execute at desirable prices. 
+
+Predictions of price-movement direction and price-target are nowhere near perfect, and should only be used in conjunction with additional information. In general, quantitative analysis should be combined with fundamental analysis.
+
+To use the following project for one's own analysis, one must first create a TD Ameritrade Developer account, create an app, and fetch his or her API key, replacing mine in the form of the 'consumer_key' variable. Next, under the 'Selection' section, one should change the 'ticker_list' variable to include whichever tickers are to be included in his or her model. This will allow one to run the rest of the code and yield the same analysis as is already shown.
 
 ## Data Understanding
 
 To decide which companies to model, I employed a stock screener from [TD Ameritrade](https://research.tdameritrade.com/grid/public/screener/stocks/overview.asp) to select stocks with market caps within my desired range. This yielded 8027 results. I filtered this down to 3055 results by removing companies worth less than \\$75M, as many companies below that threshold had such low trading volumnes that they were not conducive to modeling. For the sake of ease-of-use and proof-of-concept, I filtered this down further by randomly sampling 500. I then gathered daily price data from the past three years using [TD Ameritrade's Price History API](https://developer.tdameritrade.com/price-history/apis). Of these 500, the API failed for 157, leaving 343. Of the remaining, I selected only those with 755 days of data to use in my analysis, leaving me with 160 stocks. 
+
+### Selecting a Sample
+
+Due to time constraints, I wanted to select a subset of stocks on which to perform my analysis. I've chosen to use capital markets stocks, as their prices are affected the least by external influences. For example, biotechnology companies' prices are heavily influenced by their bringing new treatments and technologies to market. Capital markets companies performances are the most dependant on overall stock market performance out of all the industries in the dataset. 
 
 ## Data Cleaning
 
@@ -26,7 +42,12 @@ The data arrives quite clean. The only changes to be made are to the datetimes, 
 
 ![Mean Closing Prices](./images/average_closing_price.png)
 
-As shown in the plot above, the average closing price of small cap stocks has been in a downward trend since year-end 2017, falling sharply around March 2020 due to the Coronavirus pandemic and its economic impact, failing to fully recover by December 2020. The trend is much more negative than the overall market, which rose consistently until March 2020, where it fell but proceeded to exceed pre-Covid levels by December 2020.
+As shown in the plot above, the average closing price of small cap stocks has been in a downward trend since year-end 2017, falling sharply around March 2020 due to the Coronavirus pandemic and its economic impact, failing to fully recover by December 2020. The trend is much more negative than the overall market, which rose consistently until March 2020, where it fell but proceeded to exceed pre-Covid levels by 
+December 2020.
+
+Next I wanted to test my hypothesis of capital markets stocks closely following the market. Below shows the mean daily closing prices of all 160 stocks, the eight capital markets stocks, and the 152 stocks that don't belong to the capital markets industry. Because the 160 is largely composed of the 152 other stocks, it's not surprising that the green line representing the other stocks so closely follows the overall trend that it obscures the blue line.
+
+![Capital Markets Closing Prices](./images/capital_markets_closing_prices)
 
 ## Feature Engineering
 
@@ -35,6 +56,8 @@ The first feature I engineered was my target variable. The target signifies whet
 ![Target Variables](./images/target_vars.png)
 
 As shown in the barplot above, there are relatively equivalent amounts of positive and negative cases, but high imbalance when compared to the neither case. As a result, I will use F1-Score as my evaluation metric.
+
+Unlike for classification, the target variable for my time series analysis does not need to be engineered. It is simply the closing price of each day I want to forecast into the future.
 
 #### Moving Averages
 
@@ -77,15 +100,3 @@ In terms of next steps, I plan on implementing a regression model to predict exa
 Please review my full analysis in the [Jupyter Notebook](./Small_cap_stock_movement_classification).
 
 For additional info, contact Jake Oddi at [jakeoddi@gmail.com](mailto:jakeoddi@gmail.com)
-
-## Repository Structure
-
-```
-├── README.md                                            <- The top-level README for reviewers of this project
-├── Small_cap_stock_movement_classification.ipynb        <- Narrative documentation of analysis in Jupyter notebook
-├── Small_cap_stock_movement_classification.pdf          <- PDF version of project presentation
-├── price_classification_code                            <- Module containing cleaning, engineering, and modeling functions
-    └── functions.py                                     <- .py file containing all functions
-├── data                                                 <- source data used for analysis
-└── images                                               <- saved graphs
-``` 
