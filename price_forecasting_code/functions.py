@@ -1,3 +1,40 @@
+import pandas as pd
+import numpy as np
+np.random.seed(seed = 1)
+import matplotlib.pyplot as plt
+%matplotlib inline
+import seaborn as sns
+import requests
+import json
+import time
+from config import ameritrade_credentials
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.ensemble import RandomForestClassifier
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+from statsmodels.tsa.arima_model import ARMA
+from statsmodels.tsa.seasonal import seasonal_decompose
+from statsmodels.tsa.statespace.sarimax import SARIMAX
+from statsmodels.tsa.stattools import adfuller
+from sklearn.metrics import mean_squared_error
+import itertools
+import statsmodels.api as sm
+import warnings
+import tensorflow as tf
+tf.random.set_seed(2)
+from keras.models import Sequential
+from keras.layers import LSTM
+from keras.layers import Dense
+from keras.layers import Dropout
+from keras.layers import Bidirectional
+from keras.callbacks import History
+from sklearn.preprocessing import MinMaxScaler
+warnings.filterwarnings('ignore')
+
+
+
 def get_data_from_ameritrade(ticker_list, payload):
     """
     Takes in list of tickers and payload and returns complete dataframe with all 
