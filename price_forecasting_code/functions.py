@@ -2,7 +2,6 @@ import pandas as pd
 import numpy as np
 np.random.seed(seed = 1)
 import matplotlib.pyplot as plt
-%matplotlib inline
 import seaborn as sns
 import requests
 import json
@@ -395,3 +394,382 @@ def compare_scores(df_list):
         tuned_scores_comparison_list.append((rfc_f1, knn_f1))
 
     return tuned_scores_comparison_list
+
+
+
+def gridsearch_arma(orders_list, train, test, n_days = 14):
+    """
+    Takes in a list of orders, a train set, a test set, and a number of days
+    to forecast into the future. Returns a list of results for each models and
+    a list of any orders that caused the model to fail.
+    
+    orders_list -- A list of tuples containing p and q parameters
+    train -- A series of the endogenous variable
+    test -- A series of the endogenous variable to measure model performance
+    n_days -- An integer denoting the number of days to forecast
+    """
+    # Instantiating a list of results dictionaries
+    results_list = []
+
+    # Instantiating fail cache
+    fail_cache = []
+
+    # Setting number of days to forecast forward
+    n_days = n_days
+
+    # Looping through each set of parameters to find the best combination
+    for o in orders_list:
+        try:
+            # Instantiating new dictionary of results and parameters for each gridsearched model
+            results_dict = {}
+
+            # Instantiating the ARMA model
+            arma = ARMA(train, 
+                        order = o, 
+                   )
+
+            # Fitting the model
+            fitted_arma = arma.fit()
+
+            # Forecasting 14 days after training data
+            arma_preds = fitted_arma.forecast(steps = n_days)[0]
+
+            # Pulling AIC score from the model
+            aic = fitted_arma.aic
+
+            # Calculating RMSE for forecasted values
+            rmse = np.sqrt(mean_squared_error(test[:n_days].values, arma_preds))
+
+            # Assigning dictionary values of results and parameters
+            results_dict['order'] = o
+            results_dict['aic'] = aic
+            results_dict['rmse'] = rmse
+
+            # Adding each dictionary to the list of results dictionaries
+            results_list.append(results_dict) 
+
+        except:
+            fail_cache.append({'order': o,
+                               })
+            continue
+        
+    return results_list, fail_cache
+
+
+
+def get_best_time_series(results_list):
+    """
+    Takes in a list of results dictionaries containing SARIMA params
+    and model performance metrics. Returns best model params and scores
+    for RMSE and AIC, in that order.
+    
+    results_list -- list of results dictionaries.
+    """    
+    # Sorting scores list by RMSE
+    sorted_by_rmse = sorted(results_list, key = lambda x: x['rmse'])
+    
+    # Top model by RMSE
+    top_rmse_model = sorted_by_rmse[0]
+    
+    # Sorting scores list by AIC
+    sorted_by_aic = sorted(results_list, key = lambda x: x['aic'])
+    
+    # Top model by AIC
+    top_aic_model = sorted_by_aic[0]
+    
+    return [top_rmse_model, top_aic_model]
+
+
+
+def gridsearch_arma_multiple(df_list, orders_list, end_train_date, end_test_date, n_days = 14):
+    """
+    Takes in a list of dfs, a list of order params, and a number 
+    of days to forecast into the future. Returns gridsearched ARMA 
+    model results for each.
+    
+    df_list -- list of dataframes
+    orders_list -- A list of tuples containing p and q parameters
+    n_days -- An integer denoting the number of days to forecast
+    """
+    # Creating list to hold results for each df
+    best_model_list = []
+    
+    for df in df_list:
+        # Isolate endogenous variable
+        df_endog = df['close']
+        
+        # Create differenced df to improve stationarity
+        df_diff = df_endog.diff(periods = 1)
+        df_diff.dropna(inplace = True)
+        
+        # Split df into train and test sets
+        train = df_diff[:end_train_date]
+        test = df_diff[end_train_date:end_test_date]
+
+        # Calculate all models(gridsearch)
+        arma_results, arma_fails = gridsearch_arma(orders_list, train, test, n_days = n_days)
+
+        # Identify best models based on RMSE and AIC, respectively
+        best_arma = get_best_time_series(arma_results)
+        
+        # Pull ticker from df
+        ticker = df['ticker'][0]
+        
+        # Append ticker and model results to list of best models
+        best_model_list.append([ticker, best_arma])
+        
+    return best_model_list
+
+
+
+def gridsearch_sarima(orders_list, seasonal_orders_list, train, test, n_days = 14):
+    """
+    Takes in a list of orders, a train set, a test set, and a number of days
+    to forecast into the future. Returns a list of results for each models and
+    a list of any orders that caused the model to fail.
+    
+    orders_list -- A list of tuples containing p, d, and q parameters
+    seasonal_orders_list -- A list of tuples containing p, d, q, and s parameters
+    train -- A series of the endogenous variable
+    test -- A series of the endogenous variable to measure model performance
+    n_days -- An integer denoting the number of days to forecast
+    """
+    # Instantiating a list of results dictionaries
+    results_list = []
+
+    # Instantiating fail cache
+    fail_cache = []
+
+    # Setting number of days to forecast forward
+    n_days = n_days
+
+    # Looping through each set of parameters to find the best combination
+    for o in orders_list:
+        for so in seasonal_orders_list:
+            try:
+                # Instantiating new dictionary of results and parameters for each gridsearched model
+                results_dict = {}
+
+                # Instantiating the SARIMA model
+                sarima = SARIMAX(train, 
+                                 order = o, 
+                                 seasonal_order = so, 
+                                 enforce_stationarity = False,
+                                 enforce_invertibility = False
+                       )
+
+                # Fitting the model
+                fitted_sarima = sarima.fit()
+
+                # Forecasting 14 days after training data
+                sarima_preds = fitted_sarima.forecast(steps = n_days)
+
+                # Pulling AIC score from the model
+                aic = fitted_sarima.aic
+
+                # Calculating RMSE for forecasted values
+                rmse = np.sqrt(mean_squared_error(test[:n_days].values, sarima_preds))
+
+                # Assigning dictionary values of results and parameters
+                results_dict['order'] = o
+                results_dict['seasonal_order'] = so
+                results_dict['aic'] = aic
+                results_dict['rmse'] = rmse
+
+                # Adding each dictionary to the list of results dictionaries
+                results_list.append(results_dict) 
+
+            except:
+                fail_cache.append({'order': o,
+                                   'seasonal_order': so
+                                   })
+                continue
+                
+    return results_list, fail_cache
+
+
+
+def gridsearch_sarima_multiple(df_list, orders_list, seasonal_orders_list, end_train_date, end_test_date, n_days = 14):
+    """
+    Takes in a list of dfs, a list of order params, and a number 
+    of days to forecast into the future. Returns gridsearched ARMA 
+    model results for each.
+    
+    df_list -- list of dataframes
+    orders_list -- A list of tuples containing p and q parameters
+    seasonal_orders_list -- A list of tuples containing p, d, q, and s parameters
+    n_days -- An integer denoting the number of days to forecast
+    """
+    # Creating list to hold results for each df
+    best_model_list = []
+    
+    for df in df_list:
+        # Isolate endogenous variable
+        df_endog = df['close']
+        
+        # Drop null values
+        df_endog.dropna(inplace = True)
+        
+        # Split df into train and test sets
+        train = df_endog[:end_train_date]
+        test = df_endog[end_train_date:end_test_date]
+
+        # Calculate all models(gridsearch)
+        sarima_results, sarima_fails = gridsearch_sarima(orders_list, seasonal_orders_list, train, test, n_days = n_days)
+
+        # Identify best models based on RMSE and AIC, respectively
+        best_sarima = get_best_time_series(sarima_results)
+        
+        # Pull ticker from df
+        ticker = df['ticker'][0]
+        
+        # Append ticker and model results to list of best models
+        best_model_list.append([ticker, best_sarima])
+        
+    return best_model_list
+
+
+
+def gridsearch_sarimax(orders_list, seasonal_orders_list, endog_train, 
+                       exog_train, endog_test, exog_test, n_days = 14):
+    """
+    Takes in a list of orders, a train set, a test set, and a number of days
+    to forecast into the future. Returns a list of results for each models and
+    a list of any orders that caused the model to fail.
+    
+    orders_list -- A list of tuples containing p, d, and q parameters
+    seasonal_orders_list -- A list of tuples containing p, d, q, and s parameters
+    endog_train -- A series of the endogenous variable
+    exog_train -- A dataframe with exogenous regressors 
+    endog_test -- A series of the endogenous variable to measure model performance
+    exog_test -- A dataframe of exogenous regressors for test set
+    n_days -- An integer denoting the number of days to forecast
+    """
+    # Instantiating a list of results dictionaries
+    results_list = []
+
+    # Instantiating fail cache
+    fail_cache = []
+
+    # Setting number of days to forecast forward
+    n_days = n_days
+
+    # Looping through each set of parameters to find the best combination
+    for o in orders_list:
+        for so in seasonal_orders_list:
+            try:
+                # Instantiating new dictionary of results and parameters for each gridsearched model
+                results_dict = {}
+
+                # Instantiating the SARIMA model
+                sarimax = SARIMAX(endog_train,
+                                  exog_train,
+                                  order = o, 
+                                  seasonal_order = so, 
+                                  enforce_stationarity = False,
+                                  enforce_invertibility = False
+                       )
+
+                # Fitting the model
+                fitted_sarimax = sarimax.fit()
+
+                # Forecasting 14 days after training data
+                sarimax_preds = fitted_sarimax.forecast(steps = n_days, exog = exog_test)
+
+                # Pulling AIC score from the model
+                aic = fitted_sarimax.aic
+
+                # Calculating RMSE for forecasted values
+                rmse = np.sqrt(mean_squared_error(endog_test[:14].values, sarimax_preds))
+
+                # Assigning dictionary values of results and parameters
+                results_dict['order'] = o
+                results_dict['seasonal_order'] = so
+                results_dict['aic'] = aic
+                results_dict['rmse'] = rmse
+
+                # Adding each dictionary to the list of results dictionaries
+                results_list.append(results_dict) 
+
+            except:
+                fail_cache.append({'order': o,
+                                   'seasonal_order': so
+                                   })
+                continue
+                
+    return results_list, fail_cache
+
+
+
+def gridsearch_sarimax_multiple(df_list, orders_list, seasonal_orders_list, exog_vars, end_train_date, end_test_date, n_days = 14):
+    """
+    Takes in a list of dfs, a list of order params, and a number 
+    of days to forecast into the future. Returns gridsearched ARMA 
+    model results for each.
+    
+    df_list -- list of dataframes
+    orders_list -- A list of tuples containing p and q parameters
+    seasonal_orders_list -- A list of tuples containing p, d, q, and s parameters
+    exog_vars -- A list of strings denoting which columns are to be used as exogenous regressors
+    n_days -- An integer denoting the number of days to forecast
+    """
+    # Creating list to hold results for each df
+    best_model_list = []
+    
+    for df in df_list:
+        # Isolate endogenous variable
+        df_endog = df['close']
+        
+        # Isolate exogenous variables
+        df_exog = df[exog_vars]
+        
+        # Drop null values
+        df_endog.dropna(inplace = True)
+        df_exog.dropna(inplace = True)
+        
+        # Split endog df into train and test sets
+        endog_train = df_endog[:end_train_date]
+        endog_test = df_endog[end_train_date:end_test_date]
+        
+        # Split exog df into train and test sets
+        exog_train = df_exog[:end_train_date]
+        exog_test = df_exog[end_train_date:end_test_date]
+
+        # Calculate all models(gridsearch)
+        sarimax_results, sarimax_fails = gridsearch_sarimax(orders_list, seasonal_orders_list, endog_train, 
+                                                            exog_train, endog_test, 
+                                                            exog_test, n_days = n_days)
+
+        # Identify best models based on RMSE and AIC, respectively
+        best_sarimax = get_best_time_series(sarimax_results)
+        
+        # Pull ticker from df
+        ticker = df['ticker'][0]
+        
+        # Append ticker and model results to list of best models
+        best_model_list.append([ticker, best_sarimax])
+        
+    return best_model_list
+
+
+
+def split_sequence(sequence, n_steps_in, n_steps_out):
+    """
+    Split a sequence into samples
+    """
+    X, y = list(), list()
+    for i in range(len(sequence)):
+        # find the end of this pattern
+        end_ix = i + n_steps_in
+        out_end_ix = end_ix + n_steps_out
+        # check if we are beyond the sequence
+        if out_end_ix > len(sequence):
+            break
+        # gather input and output parts of the pattern
+        seq_x, seq_y = sequence[i:end_ix], sequence[end_ix:out_end_ix]
+        X.append(seq_x)
+        y.append(seq_y)
+    return np.array(X), np.array(y)
+
+
+
