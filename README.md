@@ -1,4 +1,4 @@
-# Small-Cap Stock-Price-Movement Prediction
+# Small-Cap Stock-Price Prediction
 
 **Author**: Jake Oddi
 
