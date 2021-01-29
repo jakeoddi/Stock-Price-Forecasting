@@ -18,7 +18,7 @@
 
 Quantitative analysis of stocks has become increasingly popular over the past decades, to the point where it is ubiqiutous among insitutional investors. Among individual investors, however, it is less widespread. This is due to a general lack of the technical skills required to perform such analysis. I ran into this issue myself when constructing my portfolio. I predict an easy-to-use, open-source model would serve to benefit this population. 
 
-This project applies classification methods to the daily price data of stocks with market capitalizations between \\$75M and \\$1B from the past three years to predict intraday price movements. Instances where the closing price exceeds the opening price are considered positive cases, and instances where the opposite is true are considered negative. The timescale for this data (daily) meant predicting the position of closing price relative to opening price was a desirable classification problem, as it is harder to do with time series modeling. Conversely, time series modeling to predict exact price is much better suited to interday prices, which is what I use it for. 
+This project applies classification methods to the daily price data of stocks with market capitalizations between $75M and \$1B from the past three years to predict intraday price movements. Instances where the closing price exceeds the opening price are considered positive cases, and instances where the opposite is true are considered negative. The timescale for this data (daily) meant predicting the position of closing price relative to opening price was a desirable classification problem, as it is harder to do with time series modeling. Conversely, time series modeling to predict exact price is much better suited to interday prices, which is what I use it for. 
 
 My analysis focuses on small-cap companies because they typically see lower trading volumes, and therefore have more inefficiencies that can be exploited and less noisey trading prices. Conversely, this makes trades harder to execute at desirable prices. 
 
@@ -103,7 +103,7 @@ In testing different model hyperparameter and architecture configurations, I spl
 <p align="center">
   <img width="600" height="100" src="https://github.com/jakeoddi/small_cap_stock_price_forecasting/blob/main/images/rnn_input_output.PNG">
 </p>
-In practice, I used an inpute sequence of length 100 and an output sequence of length 14. In tuning hyperparameters, I consult the model's bias/variance as shown by the relationship between the training and testing RMSE. The function I used to split the training data was taken from [here](https://machinelearningmastery.com/how-to-develop-lstm-models-for-time-series-forecasting/).
+In practice, I used an inpute sequence of length 100 and an output sequence of length 14. In tuning hyperparameters, I consult the model's bias/variance as shown by the relationship between the training and testing RMSE. 
 
 In training each model, I used the Adaptive Moment Estimation (Adam) optimizer, as it is generally faster than the main alternative, Stochastic Gradient Descent. For my loss function I used Mean Squared Error becuase it is most closely related to my evalutation metric Root Mean Squared Error.
 
