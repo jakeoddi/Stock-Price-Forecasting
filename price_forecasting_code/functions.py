@@ -773,3 +773,104 @@ def split_sequence(sequence, n_steps_in, n_steps_out):
 
 
 
+def rnn_multiple(df_list, n_steps_in, n_steps_out, end_train_date, end_test_date):
+    """
+    Takes in a list of dataframes, number of input and output steps, 
+    and dates to end train and test sets.
+    
+    df_list -- list of dataframes
+    n_steps_in -- integer
+    n_steps_out -- integer
+    end_train_date -- string in 'YYYY-MM-DD' format where the date field is optional
+    end_test_date -- string in 'YYYY-MM-DD' format where the date field is optional
+    """
+    # Create list of results to store scores and fail cache to store failed dfs
+    results_list = []
+    fail_cache = []
+    
+    for df in df_list:
+        try:
+            # Define a dictionary to store model performance on each stock
+            result = {}
+
+            # Get ticker and add to result dictionary
+            result['ticker'] = df['ticker'][0]
+
+            # Remove exogenous regressors
+            df = df['close']
+
+            # Endogenous regressors train/test split
+            rnn_train = df[:end_train_date]
+            rnn_test = df[end_train_date:end_test_date]
+
+            # Setting raw input sequence
+            raw_seq = rnn_train.values
+
+            # Reshaping raw_seq from one dimensional to two dimensional vector for scaling
+            raw_seq = raw_seq.reshape(raw_seq.shape[0], 1)
+
+            # Setting number of input and output/forecast steps
+            # 'From the past n_steps_in trading days, predict the next n_steps_out'
+            n_steps_in, n_steps_out = 100, 14
+
+            # Splitting the sequence
+            X, y = split_sequence(raw_seq, n_steps_in, n_steps_out)
+
+            # Number of features is one because time series is univariate
+            n_features = 1
+
+            # Reshape from (samples, timesteps) into (samples, timesteps, features)
+            X = X.reshape(X.shape[0], X.shape[1], n_features)
+
+            # Define model architecture
+            model = Sequential()
+            model.add(LSTM(75, input_shape = (n_steps_in, n_features)))
+            model.add(Dropout(.1))
+            model.add(Dense(25))
+            model.add(Dropout(.1))
+            model.add(Dense(n_steps_out))
+            model.compile(optimizer = 'adam', loss = 'mse')
+
+            # Instantiate History object to plot loss
+            history = History()
+
+            # Fit the model
+            model.fit(X, y, epochs = 250, verbose = False, shuffle = False, callbacks = history)
+
+            # Set train evaluation input and outputs
+            X_train = rnn_train.values[-(n_steps_in+n_steps_out):-n_steps_out]
+            y_train = rnn_train.values[-n_steps_out:]
+
+            # Reshape input
+            X_train = X_train.reshape(1, n_steps_in, n_features)
+
+            # Set test evaluation input and outputs
+            X_test = rnn_train.values[-n_steps_in:]
+            y_test = rnn_test.values
+
+            # Reshape input 
+            X_test = X_test.reshape(1, n_steps_in, n_features)
+
+            # Predicting on train and test sets
+            y_pred_train = model.predict(X_train, verbose = False)[0]
+            y_pred_test = model.predict(X_test, verbose = False)[0]
+            # [0] is to access nested array
+            
+            # Store test predictions in result dictionary
+            result['y_pred_test'] = y_pred_test
+            
+            # Calculate RMSE for train and test predictions
+            result['train_rmse'] = np.sqrt(mean_squared_error(y_train, y_pred_train))
+            result['test_rmse'] = np.sqrt(mean_squared_error(y_test, y_pred_test))
+
+            # Define loss variable for plotting
+            result['loss'] = history.history['loss']
+
+            # Append result dictionary to results_list
+            results_list.append(result)
+            
+        except:
+            fail_cache.append(df['ticker'][0])
+            continue
+            
+    return results_list, fail_cache 
