@@ -5,13 +5,13 @@
 ## Repository Structure
 
 ```
-├── README.md                                            <- The top-level README for reviewers of this project
-├── master_notebook.ipynb                                <- Narrative documentation of analysis in Jupyter notebook
-├── presentation.pdf                                     <- PDF version of project presentation
-├── price_forecasting_code                               <- Module containing cleaning, engineering, and modeling functions
-    └── functions.py                                     <- .py file containing all functions
-├── data                                                 <- source data used for analysis
-└── images                                               <- saved graphs
+├── README.md                              <- The top-level README for reviewers of this project
+├── master_notebook.ipynb                  <- Narrative documentation of analysis in Jupyter notebook
+├── presentation.pdf                       <- PDF version of project presentation
+├── price_forecasting_code                 <- Module containing cleaning, engineering, and modeling functions
+    └── functions.py                       <- .py file containing all functions
+├── data                                   <- source data used for analysis
+└── images                                 <- saved graphs
 ``` 
 
 ## Business Problem
