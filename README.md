@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 # Small-Cap Stock Price Prediction
-=======
-# Small-Cap Stock-Price Prediction
->>>>>>> 7705d72dfa617160780362993baa18d3c19dca41
 
 **Author**: Jake Oddi
 
