@@ -108,7 +108,7 @@ In training each model, I used the Adaptive Moment Estimation (Adam) optimizer, 
 
 Through a series of steps of tuning my hyperparameters and architecture, I arrived at a final model. Its architecture is graphed below. 
 
-![RNN Architecture](./images/stock_rnn_model.png)
+<center>![RNN Architecture](./images/stock_rnn_model.png)</center>
 
 ## Conclusion and Next Steps
 
@@ -127,3 +127,7 @@ Experimenting with different combinations of the number of input and output days
 Please review my full analysis in the [Jupyter Notebook](./master_notebook.ipynb).
 
 For additional info, contact Jake Oddi at [jakeoddi@gmail.com](mailto:jakeoddi@gmail.com)
+
+$\begin{bmatrix} u\\e \end{bmatrix}  \sim 
+N (\begin{bmatrix}0\\0\end{bmatrix},
+\begin{bmatrix} G(\sigma_g) &0\\ 0 &R(\sigma_{\gamma})\end{bmatrix})$
