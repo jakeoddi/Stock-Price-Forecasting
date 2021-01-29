@@ -1,4 +1,4 @@
-# Small-Cap Stock-Price-Movement Prediction
+# Small-Cap Stock Price Prediction
 
 **Author**: Jake Oddi
 
@@ -6,9 +6,9 @@
 
 ```
 ├── README.md                                            <- The top-level README for reviewers of this project
-├── small_cap_stock_price_prediction_notebook.ipynb      <- Narrative documentation of analysis in Jupyter notebook
-├── Small_cap_stock_movement_classification.pdf          <- PDF version of project presentation
-├── price_classification_code                            <- Module containing cleaning, engineering, and modeling functions
+├── master_notebook.ipynb                                <- Narrative documentation of analysis in Jupyter notebook
+├── presentation.pdf                                     <- PDF version of project presentation
+├── price_forecasting_code                               <- Module containing cleaning, engineering, and modeling functions
     └── functions.py                                     <- .py file containing all functions
 ├── data                                                 <- source data used for analysis
 └── images                                               <- saved graphs
@@ -61,25 +61,20 @@ Unlike for classification, the target variable for my time series analysis does 
 
 #### Moving Averages
 
-I know that moving averages are important technical indicators for price movement, so the next features I created served to account for both long and short-term moving averages. I created features for a 10, 50, and 200 day moving average.
+I know that moving averages are important technical indicators for price movement, as prices tend to revert to their means, so the next features I created served to account for both long and short-term moving averages. I created features for a 10, 50, and 200 day moving average.
 
 ![Moving Averages](./images/closing_and_moving_averages.png)
 
 The various moving averages are shown in comparison to the mean closing prices for each day. As one would expect, the 200 day average is much less affected by small price movements, as opposed to the 10 day average, which follows the mean closing price very closely.
 
-An important concept in quantitative finance is <b>Mean Reversion</b>, which holds that stocks tend to revert to the moving average of their prices.
 
 ## Modeling and Results
 
-### Initial Model
+### Initial Classification Model
 
-My baseline model was a KNN and was used to evaluate my engineered features. My initial accuracy and precision scores were .451 and .448, respectively; however, the addition of my moving average and percent-price-change features saw these increase to .486 and .481, respectively.
+My first simple model was a KNN and was used to evaluate my engineered features. My initial accuracy and precision scores were .451 and .448, respectively; however, the addition of my moving average and percent-price-change features saw these increase to .486 and .481, respectively.
 
-### Gridsearch and Cross Validation
-
-Next I wanted to add another model - Random Forest - then gridsearch my parameters and cross validate my evaluation metric, F1-Score. I gridsearched only on the first ten dataframes in my list of dataframes for the sake of time. For each df and respective model fit to it, a dictionary with the parameters used in the model as well as the F1-Score attained with those parameters. For each model, I compile these into a list, then pick the parameters to use in my final models based on frequency.
-
-### Final Models
+### Final Classification Models
 
 #### Analysis of Results and Comparing Models
 
@@ -89,14 +84,46 @@ For my final Random Forest and KNN models, I used the parameters I obtained thro
 
 Contrary to my initial assumption, the KNN F1-Score (.48) outperformed the RF F1-Score (.43) by .05 on average, as shown in the graph above.
 
+### Time Series Modeling
+
+#### SARIMAX
+
+In order to predict exact prices as opposed to price movements, I needed to use time series models like ARMA, which stands for Autoregressive Moving Average. The autoregressive portion of the title refers to the model's ability to predict a value based on values that came chronologically before it. The moving average portion is self explanatory, referring to the model's use of a moving average component in its forecasting. I use three variations of the ARMA model - ARMA, SARIMA, and SARIMAX.
+
+The next logical progression after the ARMA model was the SARIMA, which stands for Seasonal Autoregressive Integrated Moving Average. As opposed to removing trend and periodicity manually through differencing and similar strategies, the model removes these elements by itself.
+
+After detrending with SARIMA, I finally add exogenous regressors, which are additional features in addition to the time series element (the endogenous regressor). I use only the 10, 50, and 200 day moving averages, as these are the only additional features that add information.
+
+#### LSTM RNN
+
+Next I wanted to try a neural network. A vanilla recurrent neural network is not optimal for this application as it is unable to retain substantial information from early in the time series. As a result, I use layers made up of Long-Short Term Memory cells, as they have less information loss due to the configuration of their cells. Each cell has three activation functions, each controlling a different aspect of the cell's memory, whereas traditional RNN cells only have one.
+
+In testing different model hyperparameter and architecture configurations, I split my experimental data into a training and a test set. The test set contains data from the most recent 14 days. The training set is split into numerous input and output sets, which together form a 3D tensor to be fed into the first LSTM layer. The splitting follows this format: given a sequence [1, 2, 3, 4, 5, 6, 7], the split sequence is: <br>
+<br>
+<center> Input - $\begin{bmatrix} 1 & 2 & 3 \\ 2 & 3 & 4 \\ 3 & 4 & 5 \end{bmatrix}$  Output - $\begin{bmatrix} 4 & 5 \\ 5 & 6 \\ 6 & 7 \end{bmatrix}$, with each row being an input-output pair. </center>
+
+In practice, I used an inpute sequence of length 100 and an output sequence of length 14. In tuning hyperparameters, I consult the model's bias/variance as shown by the relationship between the training and testing RMSE. The function I used to split the training data was taken from [here](https://machinelearningmastery.com/how-to-develop-lstm-models-for-time-series-forecasting/).
+
+In training each model, I used the Adaptive Moment Estimation (Adam) optimizer, as it is generally faster than the main alternative, Stochastic Gradient Descent. For my loss function I used Mean Squared Error becuase it is most closely related to my evalutation metric Root Mean Squared Error.
+
+Through a series of steps of tuning my hyperparameters and architecture, I arrived at a final model. Its architecture is graphed below. 
+
+![RNN Architecture](./images/stock_rnn_model.png)
+
 ## Conclusion and Next Steps
 
-The highest performing model was the KNN, though this is only on a sample of 10 out of 160. I'd like to predict on the entire set of 160, add additional models, and add an ensemble voting classifier.
+The highest performing classification model was the KNN, though this is only on a sample of 8 out of 160. I'd like to predict on the entire set of 160, add additional models, and add an ensemble voting classifier.
 
-In terms of next steps, I plan on implementing a regression model to predict exact prices in addition to price-movement-direction. To further improve the models I have, I'd like to add more features, such as momentum indicators like Moving Average Convergence/Divergence (MACD) and Relative Strength Index (RSI), as well as a volatility indicator like Standard Deviation or Beta. I'd also like to add a percent-change-in-volume feature.
+For the sample I employed an ARMA model on, the average RMSE accross the 14 days was 0.287. For the sample I employed a SARIMA model on, the average RMSE accross the 14 days was 0.297. For the sample I employed a SARIMAX model on, the average RMSE accross the 14 days was 0.196 - my highest performing model. 
+
+Although my LSTM neural net performed better on the testing dataframe in comparison to the untuned SARIMAX (RMSE of 0.495 vs. 0.634, respectively), the neural net performed worse when RMSE was averaged accross all stocks in the sample, with an RMSE of 0.763, than did the gridsearched SARIMAX (0.196).
+
+To further improve the models I have, I'd like to add more features, such as momentum indicators like Moving Average Convergence/Divergence (MACD) and Relative Strength Index (RSI), as well as a volatility indicator like Standard Deviation or Beta. I'd also like to add a sentiment indicator based on call/put options trading.
+
+Experimenting with different combinations of the number of input and output days is an important next step. My neural net performed poorly relative to my SARIMAX, however, perhaps it would perform comparably, if not better, if only predicting one time step as opposed to 14. 
 
 ## More Information
 
-Please review my full analysis in the [Jupyter Notebook](./Small_cap_stock_movement_classification).
+Please review my full analysis in the [Jupyter Notebook](./master_notebook.ipynb).
 
 For additional info, contact Jake Oddi at [jakeoddi@gmail.com](mailto:jakeoddi@gmail.com)
