@@ -100,7 +100,7 @@ Next I wanted to try a neural network. A vanilla recurrent neural network is not
 
 In testing different model hyperparameter and architecture configurations, I split my experimental data into a training and a test set. The test set contains data from the most recent 14 days. The training set is split into numerous input and output sets, which together form a 3D tensor to be fed into the first LSTM layer. The splitting follows this format: given a sequence [1, 2, 3, 4, 5, 6, 7], the split sequence is: <br>
 
-<img width = "450" height = "150" align = "center" src = "https://github.com/jakeoddi/small_cap_stock_price_forecasting/blob/main/images/rnn_input_output.PNG">
+<img align = "center" width = "600" height = "75" src = "https://github.com/jakeoddi/small_cap_stock_price_forecasting/blob/main/images/rnn_input_output.PNG">
 
 In practice, I used an inpute sequence of length 100 and an output sequence of length 14. In tuning hyperparameters, I consult the model's bias/variance as shown by the relationship between the training and testing RMSE. The function I used to split the training data was taken from [here](https://machinelearningmastery.com/how-to-develop-lstm-models-for-time-series-forecasting/).
 
